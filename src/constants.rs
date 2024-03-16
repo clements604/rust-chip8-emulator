@@ -1,9 +1,15 @@
 
-const ROM_START: u8 = 0x200; // The start position of the ROM in memory
-const FONTSET_SIZE: u8 = 80; // The size of the fontset
-const FONTSET_START_ADDRESS: u8 = 0x50; // The start position of the fontset in memory
+pub const ROM_START: u16 = 0x200; // The start position of the ROM in memory
+pub const FONTSET_SIZE: usize = 80; // The size of the fontset
+pub const FONTSET_START_ADDRESS: u8 = 0x50; // The start position of the fontset in memory
+pub const KEY_COUNT: u8 = 16;
+pub const MEMORY_SIZE: u8 = 4096;
+pub const REGISTER_COUNT: u8 = 16;
+pub const STACK_LEVELS: u8 = 16;
+pub const VIDEO_HEIGHT: u8 = 32;
+pub const VIDEO_WIDTH: u8 = 64;
 
-const FONTSET: [u8; FONTSET_SIZE] = [
+pub const FONTSET: [u8; FONTSET_SIZE] = [
         0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
         0x20, 0x60, 0x20, 0x20, 0x70, // 1
         0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
