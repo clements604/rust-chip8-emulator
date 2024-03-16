@@ -27,22 +27,22 @@ pub struct Cpu {
     0x200-0xFFF: Instructions from the ROM will be stored starting at 0x200,
     and anything left after the ROM’s space is free to use.
     */
-    memory: [u8; 4096],
+    memory: Vec<u8>,//4096
     index: u16,
     pc: u16, // program counter
-    stack: [u16; 16],
+    stack: Vec<u16>,//16
     sp: u8, // stack pointer
     delay_timer: u8,
     sound_timer: u8,
-    keypad: [u8; 16],
-    video: [u32; 64 * 32],
+    keypad: Vec<u8>, //16
+    video: Vec<u32>,//64 * 32
     opcode: u16,
 }
 
 impl Cpu {
     // TODO for the constructor, check if initial values are correct for all 0s
     pub fn new() -> Self {
-        let mut memory: [u8; 4096] = [0; 4096];
+        let mut memory = vec![0; 4096];
         
         for i in 0..constants::FONTSET_SIZE {
             memory[FONTSET_START_ADDRESS as usize + i] = FONTSET[i]; // Load the fontset into memory
@@ -52,12 +52,12 @@ impl Cpu {
             memory: memory,
             index: 0,
             pc: ROM_START as u16, // Start of ROM in memory
-            stack: [0; 16],
+            stack: vec![0; 16],
             sp: 0, // stack pointer
             delay_timer: 0,
             sound_timer: 0,
-            keypad: [0; 16],
-            video: [0; 64 * 32],
+            keypad: vec![0; 16],
+            video: vec![0; 64 * 32],
             opcode: 0,
         }
     }
@@ -365,15 +365,14 @@ impl Cpu {
 
             for column in 1..8 {
                 let sprite_pixel = sprite_byte & (0x80u8 >> column);
-                let screen_pixel = &self.video[((y_pos as usize + row as usize) * constants::VIDEO_WIDTH as usize + (x_pos as usize + column as usize)) as usize];
-                //let screen_pixel: u32 = self.video[((y_pos as usize + row as usize) * constants::VIDEO_WIDTH as usize + (x_pos as usize + column as usize)) as usize]; // TODO potentially incorrect array index
+                let screen_pixel = &mut self.video[((y_pos as usize + row as usize) * constants::VIDEO_WIDTH as usize + (x_pos as usize + column as usize)) as usize];
 
                 if sprite_pixel != 0 {
                     if *screen_pixel == 0xFFFFFFFF { // colision
                         self.registers[0xF] = 1;
                     }
                     // XOR screen and sprite pixels
-                    &screen_pixel ^= 0xFFFFFFFF; // TODO update after I convert every array to vector.
+                    *screen_pixel ^= 0xFFFFFFFF; // TODO update after I convert every array to vector.
                 }
             }
 
