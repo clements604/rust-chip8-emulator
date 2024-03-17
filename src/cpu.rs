@@ -379,4 +379,144 @@ impl Cpu {
         }
     }
 
+    /*
+    *   Ex9E - SKP Vx
+    *   Skip next instruction if key with the value of Vx is pressed.
+    */
+    fn op_ex9e(&mut self) {
+        let v_x = (self.opcode & 0x0F00u16) >> 8u16;
+        let key = self.registers[v_x as usize];
+
+        if self.keypad[key as usize] != 0 {
+            self.pc += 2;
+        }
+    }
+
+    /*
+    *   ExA1 - SKNP Vx
+    *   Skip next instruction if key with the value of Vx is not pressed.
+    */
+    fn op_exa1(&mut self) {
+        let v_x = (self.opcode & 0x0F00u16) >> 8u16;
+        let key = self.registers[v_x as usize];
+
+        if self.keypad[key as usize] == 0 {
+            self.pc += 2;
+        }
+    }
+
+    /*
+    *   Fx07 - LD Vx, DT
+    *   Set Vx = delay timer value.
+    */
+    fn op_fx07(&mut self) {
+        let v_x = (self.opcode & 0x0F00u16) >> 8u16;
+        self.registers[v_x as usize] = self.delay_timer;
+    }
+
+    /*
+    *   Fx0A - LD Vx, K
+    *   Wait for a key press, store the value of the key in Vx.
+    *   The easiest way to “wait” is to decrement the PC by 2 whenever a keypad value is not detected.
+    *   This has the effect of running the same instruction repeatedly.
+    */
+    fn op_fx0a(&mut self) {
+        let v_x = (self.opcode & 0x0F00u16) >> 8u16;
+
+        for i in 0..15 {
+            if self.keypad[i] != 0 {
+                self.registers[v_x as usize] = i as u8;
+                return;
+            }
+        }
+
+        self.pc -= 2;
+    }
+
+    /*
+    *   Fx15 - LD DT, Vx
+    *   Set delay timer = Vx.
+    */
+    fn op_fx15(&mut self) {
+        let v_x = (self.opcode & 0x0F00u16) >> 8u16;
+        self.delay_timer = self.registers[v_x as usize];
+    }
+
+    /*
+    *   Fx18 - LD ST, Vx
+    *   Set sound timer = Vx.
+    */
+    fn op_fx18(&mut self) {
+        let v_x = (self.opcode & 0x0F00u16) >> 8u16;
+        self.sound_timer = self.registers[v_x as usize];
+    }
+
+    /*
+    *   Fx1E - ADD I, Vx
+    *   Set I = I + Vx.
+    */
+    fn op_fx1e(&mut self) {
+        let v_x = (self.opcode & 0x0F00u16) >> 8u16;
+        self.index += self.registers[v_x as usize] as u16;
+    }
+
+    /*
+    *   Fx29 - LD F, Vx
+    *   Set I = location of sprite for digit Vx.
+    */
+    fn op_fx29(&mut self) {
+        let v_x = (self.opcode & 0x0F00u16) >> 8u16;
+        let digit = self.registers[v_x as usize];
+
+        self.index = FONTSET_START_ADDRESS as u16 + (5 * digit as u16);
+    }
+
+    /*
+    *   Fx33 - LD B, Vx
+    *   Store BCD representation of Vx in memory locations I, I+1, and I+2.
+    *   The interpreter takes the decimal value of Vx, and places the hundreds digit in memory at location in I,
+    *   the tens digit at location I+1, and the ones digit at location I+2.
+    *
+    *   We can use the modulus operator to get the right-most digit of a number, and then do a division to remove that digit.
+    *   A division by ten will either completely remove the digit (340 / 10 = 34),
+    *   or result in a float which will be truncated (345 / 10 = 34.5 = 34).
+    */
+    fn op_fx33(&mut self) {
+        let v_x = (self.opcode & 0x0F00u16) >> 8u16;
+        let mut value = self.registers[v_x as usize];
+
+        // Ones-place
+        self.memory[self.index as usize + 2] = value % 10;
+        value /= 10;
+        // Tens-place
+        self.memory[self.index as usize + 1] = value % 10;
+        value /= 10;
+        // Hundreds-place
+        self.memory[self.index as usize] = value % 10;
+    }
+
+    /*
+    *   Fx55 - LD [I], Vx
+    *   Store registers V0 through Vx in memory starting at location I.
+    */
+    fn op_fx55(&mut self) {
+        let v_x = (self.opcode & 0x0F00u16) >> 8u16;
+
+        for i in 0..v_x {
+            self.memory[self.index as usize + i as usize] = self.registers[i as usize];
+        }
+    }
+
+    /*
+    *   Fx65 - LD Vx, [I]
+    *   Read registers V0 through Vx from memory starting at location I.
+    */
+    fn op_fx65(&mut self) {
+        let v_x = (self.opcode & 0x0F00u16) >> 8u16;
+
+        for i in 0..v_x {
+            self.registers[i as usize] = self.memory[self.index as usize + i as usize];
+        }
+    }
+
 }
