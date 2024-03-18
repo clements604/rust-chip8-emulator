@@ -37,21 +37,90 @@ pub struct Cpu {
     keypad: Vec<u8>, //16
     video: Vec<u32>,//64 * 32
     opcode: u16,
+    // TODO "table" currently is never read
+    table: Vec<InstrPtr>, // Function pointer table
+    table0: Vec<InstrPtr>, // 
+    table8: Vec<InstrPtr>, // 
+    tablee: Vec<InstrPtr>, // 
+    tablef: Vec<InstrPtr>, // 
 }
 
 impl Cpu {
     // TODO for the constructor, check if initial values are correct for all 0s
     pub fn new() -> Self {
+        // Initialize the memory with 0s
         let mut memory = vec![0; 4096];
-        
+        // Load the fontset into memory
         for i in 0..constants::FONTSET_SIZE {
             memory[FONTSET_START_ADDRESS as usize + i] = FONTSET[i]; // Load the fontset into memory
         }
+        // Initialize the function pointer tables
+        let mut table: Vec<fn(&mut Cpu)> = Vec::new();
+        let mut table0: Vec<fn(&mut Cpu)> = Vec::new();
+        let mut table8: Vec<fn(&mut Cpu)> = Vec::new();
+        let mut tablee: Vec<fn(&mut Cpu)> = Vec::new();
+        let mut tablef: Vec<fn(&mut Cpu)> = Vec::new();
+
+        // Add the sub-tables to the main table and functions to subtables
+        table[0x0] = Cpu::table_0;
+        table[0x1] = Cpu::op_1nnn;
+        table[0x2] = Cpu::op_2nnn;
+        table[0x3] = Cpu::op_3xkk;
+        table[0x4] = Cpu::op_4xkk;
+        table[0x5] = Cpu::op_5xy0;
+        table[0x6] = Cpu::op_6xkk;
+        table[0x7] = Cpu::op_7xkk;
+        table[0x8] = Cpu::table_8;
+        table[0x9] = Cpu::op_9xy0;
+        table[0xA] = Cpu::op_annn;
+        table[0xB] = Cpu::op_bnnn;
+        table[0xC] = Cpu::op_cxkk;
+        table[0xD] = Cpu::op_dxyn;
+        table[0xE] = Cpu::table_e;
+        table[0xF] = Cpu::table_f;
+
+        for i in 0..0xE {
+            table0[i] = Cpu::op_null;
+            table8[i] = Cpu::op_null;
+            tablee[i] = Cpu::op_null;
+        }
+
+        table0[0x0] = Cpu::op_00e0;
+        table0[0xE] = Cpu::op_00ee;
+
+        table8[0x0] = Cpu::op_8xy0;
+        table8[0x1] = Cpu::op_8xy1;
+        table8[0x2] = Cpu::op_8xy2;
+        table8[0x3] = Cpu::op_8xy3;
+        table8[0x4] = Cpu::op_8xy4;
+        table8[0x5] = Cpu::op_8xy5;
+        table8[0x6] = Cpu::op_8xy6;
+        table8[0x7] = Cpu::op_8xy7;
+        table8[0xE] = Cpu::op_8xye;
+
+        tablee[0x1] = Cpu::op_exa1;
+        tablee[0xE] = Cpu::op_ex9e;
+
+        for i in 0..0x65 {
+            tablef[i] = Cpu::op_null;
+        }
+
+        tablef[0x07] = Cpu::op_fx07;
+        tablef[0x0A] = Cpu::op_fx0a;
+        tablef[0x15] = Cpu::op_fx15;
+        tablef[0x18] = Cpu::op_fx18;
+        tablef[0x1E] = Cpu::op_fx1e;
+        tablef[0x29] = Cpu::op_fx29;
+        tablef[0x33] = Cpu::op_fx33;
+        tablef[0x55] = Cpu::op_fx55;
+        tablef[0x65] = Cpu::op_fx65;
+
+        // Initialize the CPU
         Cpu {
             registers: [0; 16],
             memory: memory,
             index: 0,
-            pc: ROM_START as u16, // Start of ROM in memory
+            pc: ROM_START, // Start of ROM in memory
             stack: vec![0; 16],
             sp: 0, // stack pointer
             delay_timer: 0,
@@ -59,6 +128,11 @@ impl Cpu {
             keypad: vec![0; 16],
             video: vec![0; 64 * 32],
             opcode: 0,
+            table: table,
+            table0: table0,
+            table8: table8,
+            tablee: tablee,
+            tablef: tablef,
         }
     }
 
@@ -82,7 +156,7 @@ impl Cpu {
     /*
     * Generate a random u8 number
     */
-    fn rand_gen(&self) -> u8 {
+    fn rand_gen(&mut self) -> u8 {
         let mut rng = rand::thread_rng();
         rng.gen_range(0..=255)
     }
@@ -519,4 +593,40 @@ impl Cpu {
         }
     }
 
+    /*
+    *   Table 0
+    */
+    fn table_0(&mut self) {
+        self.table0[(self.opcode & 0x000Fu16) as usize];
+    }
+
+    /*
+    *   Table 8
+    */
+    fn table_8(&mut self) {
+        self.table8[(self.opcode & 0x000Fu16) as usize];
+    }
+
+    /*
+    *   Table E
+    */
+    fn table_e(&mut self) {
+        self.tablee[(self.opcode & 0x000Fu16) as usize];
+    }
+
+    /*
+    *   Table F
+    */
+    fn table_f(&mut self) {
+        self.tablef[(self.opcode & 0x000Fu16) as usize];
+    }
+
+    /*
+    *   OP_NULL
+    *   Do nothing.
+    */
+    fn op_null(&mut self) {}
+
 }
+
+type InstrPtr = fn(&mut Cpu);
