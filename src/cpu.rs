@@ -627,6 +627,28 @@ impl Cpu {
     */
     fn op_null(&mut self) {}
 
+    /*
+    *   Cycle
+    *   Fetch, decode, and execute an instruction.
+    */
+    fn cycle(&mut self) {
+        // Fetch the opcode
+        // TODO possibly needs to be u8, not U16
+        let opcode: u16 = ((self.memory[self.pc as usize] as u16) << 8u16) | self.memory[self.pc as usize + 1] as u16;
+        // Increnemnt program counter before executing anyting
+        self.pc += 2;
+        // Decode and execute the opcode
+        (self.table[(opcode & 0xF000u16) as usize >> 12u16])(self);
+        // Decrement the delat timer if it has been set
+        if self.delay_timer > 0 {
+            self.delay_timer -= 1;
+        }
+        // Decrement the sound timer if it has been set
+        if self.sound_timer > 0 {
+            self.sound_timer -= 1;
+        }
+    }
+
 }
 
 type InstrPtr = fn(&mut Cpu);
