@@ -55,34 +55,34 @@ impl Cpu {
             memory[FONTSET_START_ADDRESS as usize + i] = FONTSET[i]; // Load the fontset into memory
         }
         // Initialize the function pointer tables
-        let mut table: Vec<fn(&mut Cpu)> = Vec::new();
-        let mut table0: Vec<fn(&mut Cpu)> = Vec::new();
-        let mut table8: Vec<fn(&mut Cpu)> = Vec::new();
-        let mut tablee: Vec<fn(&mut Cpu)> = Vec::new();
-        let mut tablef: Vec<fn(&mut Cpu)> = Vec::new();
+        let mut table: Vec<fn(&mut Cpu)> = vec![Cpu::op_null; 16];
+        let mut table0: Vec<fn(&mut Cpu)> = vec![Cpu::op_null; 16];
+        let mut table8: Vec<fn(&mut Cpu)> = vec![Cpu::op_null; 16];
+        let mut tablee: Vec<fn(&mut Cpu)> = vec![Cpu::op_null; 16];
+        let mut tablef: Vec<fn(&mut Cpu)> = vec![Cpu::op_null; 102];
 
         // Add the sub-tables to the main table and functions to subtables
-        table.push(Cpu::table_0);
-        table.push(Cpu::op_1nnn);
-        table.push(Cpu::op_2nnn);
-        table.push(Cpu::op_3xkk);
-        table.push(Cpu::op_4xkk);
-        table.push(Cpu::op_5xy0);
-        table.push(Cpu::op_6xkk);
-        table.push(Cpu::op_7xkk);
-        table.push(Cpu::table_8);
-        table.push(Cpu::op_9xy0);
-        table.push(Cpu::op_annn);
-        table.push(Cpu::op_bnnn);
-        table.push(Cpu::op_cxkk);
-        table.push(Cpu::op_dxyn);
-        table.push(Cpu::table_e);
-        table.push(Cpu::table_f);
+        table[0x0] = Cpu::table_0;
+        table[0x1] = Cpu::op_1nnn;
+        table[0x2] = Cpu::op_2nnn;
+        table[0x3] = Cpu::op_3xkk;
+        table[0x4] = Cpu::op_4xkk;
+        table[0x5] = Cpu::op_5xy0;
+        table[0x6] = Cpu::op_6xkk;
+        table[0x7] = Cpu::op_7xkk;
+        table[0x8] = Cpu::table_8;
+        table[0x9] = Cpu::op_9xy0;
+        table[0xA] = Cpu::op_annn;
+        table[0xB] = Cpu::op_bnnn;
+        table[0xC] = Cpu::op_cxkk;
+        table[0xD] = Cpu::op_dxyn;
+        table[0xE] = Cpu::table_e;
+        table[0xF] = Cpu::table_f;
 
         for i in 0..0xF {
-            table0.push(Cpu::op_null);
-            table8.push(Cpu::op_null);
-            tablee.push(Cpu::op_null);
+            table0[i] = Cpu::op_null;
+            table8[i] = Cpu::op_null;
+            tablee[i] = Cpu::op_null;
         }
 
         table0[0x0] = Cpu::op_00e0; // TODO overriding the above loop?
@@ -103,7 +103,7 @@ impl Cpu {
         tablee[0xE] = Cpu::op_ex9e;
 
         for i in 0..0x66 {
-            tablef.push(Cpu::op_null);
+            tablef[i] = Cpu::op_null;
         }
 
         tablef[0x07] = Cpu::op_fx07;
@@ -140,7 +140,7 @@ impl Cpu {
     /*
     * Load a ROM into memory
     */
-    fn load_rom(&mut self, file_name: String) {
+    pub fn load_rom(&mut self, file_name: String) {
         let mut file = File::open(file_name).expect("ROM file not found");
         let file_size: usize = file.metadata().unwrap().len() as usize;
         let mut buffer: Vec<u8> = vec![0; file_size];
