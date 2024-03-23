@@ -1,43 +1,41 @@
 extern crate sdl2;
 
-use sdl2::pixels::Color;
-use sdl2::event::Event;
-use sdl2::keyboard::Keycode;
-use sdl2::rect::Rect;
+use sdl2::pixels::PixelFormatEnum;
+use sdl2::render::Texture;
+use sdl2::video::{Window, WindowContext};
+use sdl2::render::{Canvas, TextureCreator};
 
 pub struct Platform {
-
-    aa: u32,
-    
+    window: Window,
+    renderer: sdl2::render::Canvas<Window>,
+    texture: Texture<'static>,
+    texture_creator: TextureCreator<WindowContext>,
 }
 
 impl Platform {
-    pub fn new(title: String, window_width: u32, window_height: u32, texture_width: u32, texture_height: u32) -> Self { 
-
+    pub fn new(title: &String, window_width: u32, window_height: u32, texture_width: u32, texture_height: u32) -> Self {
         let sdl_context = sdl2::init().unwrap();
         let video_subsystem = sdl_context.video().unwrap();
 
-        // Create a window
-        let window = video_subsystem.window("SDL2 Window", window_width, window_height)
-        .position_centered()
-        .build()
-        .unwrap();
+        let window = video_subsystem.window(title, window_width, window_height)
+            .position_centered()
+            .build()
+            .unwrap();
 
-        // Create a renderer
-        let mut renderer = window.into_canvas().build().unwrap();
+            let renderer: sdl2::render::Canvas<Window> = window.into_canvas()
+            .accelerated()
+            .build()
+            .unwrap();
 
-        // Set render draw color to white
-        renderer.set_draw_color(Color::RGB(255, 255, 255));
+            let texture_creator: TextureCreator<_> = renderer.texture_creator();
+            let texture = &texture_creator.create_texture_streaming(PixelFormatEnum::RGBA8888, texture_width, texture_height).unwrap();
 
-        // Clear the window
-        renderer.clear();
-
-        // Set render draw color to black
-        renderer.set_draw_color(Color::RGB(0, 0, 0));
-
-        Platform{
-            aa: 0,
+        Platform {
+            window: window,
+            renderer: renderer,
+            texture: texture,
+            texture_creator: texture_creator,
         }
-
     }
+
 }

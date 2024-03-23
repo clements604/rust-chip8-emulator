@@ -34,8 +34,8 @@ pub struct Cpu {
     sp: u8, // stack pointer
     delay_timer: u8,
     sound_timer: u8,
-    keypad: Vec<u8>, //16
-    video: Vec<u32>,//64 * 32
+    pub keypad: Vec<u8>, //16
+    pub video: Vec<u32>,//64 * 32
     opcode: u16,
     // TODO "table" currently is never read
     table: Vec<InstrPtr>, // Function pointer table
@@ -632,7 +632,7 @@ impl Cpu {
     *   Cycle
     *   Fetch, decode, and execute an instruction.
     */
-    fn cycle(&mut self) {
+    pub fn cycle(&mut self) {
         // Fetch the opcode
         // TODO possibly needs to be u8, not U16
         let opcode: u16 = ((self.memory[self.pc as usize] as u16) << 8u16) | self.memory[self.pc as usize + 1] as u16;
