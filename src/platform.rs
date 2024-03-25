@@ -6,10 +6,10 @@ use sdl2::video::{Window, WindowContext};
 use sdl2::render::{Canvas, TextureCreator};
 
 pub struct Platform {
-    window: Window,
-    renderer: sdl2::render::Canvas<Window>,
-    texture: Texture<'static>,
-    texture_creator: TextureCreator<WindowContext>,
+    //window: Window,
+    //renderer: sdl2::render::Canvas<Window>,
+    //texture: Texture<'static>,
+    //texture_creator: TextureCreator<WindowContext>,
 }
 
 impl Platform {
@@ -31,10 +31,10 @@ impl Platform {
             let texture = &texture_creator.create_texture_streaming(PixelFormatEnum::RGBA8888, texture_width, texture_height).unwrap();
 
         Platform {
-            window: window,
-            renderer: renderer,
-            texture: texture,
-            texture_creator: texture_creator,
+            //window: window,
+            //renderer: renderer,
+            //texture: texture,
+            //texture_creator: texture_creator,
         }
     }
 

@@ -27,7 +27,7 @@ pub struct Cpu {
     0x200-0xFFF: Instructions from the ROM will be stored starting at 0x200,
     and anything left after the ROM’s space is free to use.
     */
-    memory: Vec<u8>,//4096
+    memory: [u8; 4096],
     index: u16,
     pc: u16, // program counter
     stack: Vec<u16>,//16
@@ -79,7 +79,7 @@ impl Cpu {
         table[0xE] = Cpu::table_e;
         table[0xF] = Cpu::table_f;
 
-        for i in 0..0xF {
+        for i in 0..0xE {
             table0[i] = Cpu::op_null;
             table8[i] = Cpu::op_null;
             tablee[i] = Cpu::op_null;
@@ -119,7 +119,7 @@ impl Cpu {
         // Initialize the CPU
         Cpu {
             registers: [0; 16],
-            memory: memory,
+            memory: [0; 4096],
             index: 0,
             pc: ROM_START, // Start of ROM in memory
             stack: vec![0; 16],
@@ -142,15 +142,20 @@ impl Cpu {
     */
     pub fn load_rom(&mut self, file_name: String) {
         let mut file = File::open(file_name).expect("ROM file not found");
-        let file_size: usize = file.metadata().unwrap().len() as usize;
-        let mut buffer: Vec<u8> = vec![0; file_size];
+        let mut buffer: Vec<u8> = Vec::new();
 
         // Read the file into a buffer
-        file.read(&mut buffer).expect("Error reading file");
+        file.read_to_end(&mut buffer).expect("Error reading file");
+
+        // Load the fonts into CPU memory
+        for i in 0..FONTSET_SIZE {
+            self.memory[FONTSET_START_ADDRESS as usize + i] = FONTSET[i];
+        }
 
         // Load the buffer into CPU memory
-        for i in 0..file_size {
-            self.memory[ROM_START as usize + 1] = buffer[i] as u8;
+        for i in 0..buffer.len() {
+            self.memory[ROM_START as usize + i] = buffer[i] as u8;
+            println!("{}", self.memory[ROM_START as usize + i]);
         }
     }
 
@@ -178,7 +183,10 @@ impl Cpu {
     */
     fn op_00ee(&mut self) {
         self.sp -= 1;
-        self.pc = self.stack[self.sp as usize]; // TODO possible needs to add cast to usize for array index
+        self.pc = self.stack[self.sp as usize];
+        
+        //self.pc = self.stack[self.sp as usize];
+
     }
 
     /*
@@ -194,10 +202,14 @@ impl Cpu {
     *   Call subroutine at nnn.
     */
     fn op_2nnn(&mut self) {
-        self.stack[self.sp as usize] = self.pc;
+        /*self.stack[self.sp as usize] = self.pc;
         self.sp += 1;
+        self.pc = self.opcode & 0x0FFF;
+        */
+        self.sp = self.sp.wrapping_add(1);
+        self.stack.push(self.pc);
         self.pc = self.opcode & 0x0FFFu16;
-    }
+        }
 
     /*
     *   3xkk - SE Vx, byte
@@ -636,8 +648,11 @@ impl Cpu {
         // Fetch the opcode
         // TODO possibly needs to be u8, not U16
         let opcode: u16 = ((self.memory[self.pc as usize] as u16) << 8u16) | self.memory[self.pc as usize + 1] as u16;
+        println!("opcode: {}", opcode);
         // Increnemnt program counter before executing anyting
+        println!("pc before increment: {}", self.pc);
         self.pc += 2;
+        println!("pc after increment: {}", self.pc);
         // Decode and execute the opcode
         (self.table[(opcode & 0xF000u16) as usize >> 12u16])(self);
         // Decrement the delat timer if it has been set

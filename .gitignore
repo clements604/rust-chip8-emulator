@@ -14,3 +14,6 @@ Cargo.toml.orig
 
 # Generated documentation
 /target/doc/
+
+# Test roms
+/test/

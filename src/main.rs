@@ -38,8 +38,8 @@ fn main() {
 
     let mut quit: bool = false;
 
-    /*while ! quit {
-        quit = platform.process_input(&mut cpu.keypad);
+    while ! quit {
+        //quit = platform.process_input(&mut cpu.keypad);
 
         let current_time = Instant::now();
         let dt = current_time.duration_since(last_cycle_time);
@@ -47,8 +47,8 @@ fn main() {
         if dt.as_millis() > cycle_delay as u128 {
             last_cycle_time = current_time;
             cpu.cycle();
-            platform.update_with_buffer(&cpu.video, video_pitch);
+            //platform.update_with_buffer(&cpu.video, video_pitch);
         }
-    }*/
+    }
 
 }
