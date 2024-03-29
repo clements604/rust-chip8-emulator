@@ -340,7 +340,7 @@ impl Cpu {
     *   Dxyn - DRW Vx, Vy, nibble
     *   Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
     */
-    fn op_dxyn(&mut self) {
+    fn op_dxyn(&mut self) { // TODO Unsure of this implementation
         let vx = (self.opcode & 0x0F00) >> 8;
         let vy = (self.opcode & 0x0F00) >> 4;
         let height = self.opcode & 0x000F;
@@ -374,7 +374,13 @@ impl Cpu {
     *   Skip next instruction if key with the value of Vx is pressed.
     */
     fn op_ex9e(&mut self) {
-        
+        let vx = (self.opcode & 0x0F00) >> 8;
+        let key = self.registers[vx as usize] as usize;
+        let key_state = self.keypad[key];
+
+        if key_state != 0 {
+            self.pc += 2;
+        }
     }
 
     /*
@@ -382,7 +388,13 @@ impl Cpu {
     *   Skip next instruction if key with the value of Vx is not pressed.
     */
     fn op_exa1(&mut self) {
-        
+        let vx = (self.opcode & 0x0F00) >> 8;
+        let key = self.registers[vx as usize] as usize;
+        let key_state = self.keypad[key];
+
+        if key_state == 0 {
+            self.pc += 2;
+        }
     }
 
     /*
@@ -390,7 +402,8 @@ impl Cpu {
     *   Set Vx = delay timer value.
     */
     fn op_fx07(&mut self) {
-        
+        let vx = (self.opcode & 0x0F00) >> 8;
+        self.registers[vx as usize] = self.delay_timer;
     }
 
     /*
@@ -400,7 +413,15 @@ impl Cpu {
     *   This has the effect of running the same instruction repeatedly.
     */
     fn op_fx0a(&mut self) {
-        
+        let vx = (self.opcode & 0x0F00) >> 8;
+
+        for key in 0..self.keypad.len() {
+            if self.keypad[key] != 0 {
+                self.registers[vx as usize] = key as u8;
+                return;
+            }
+        }
+        self.pc -= 2; // No key press
     }
 
     /*
@@ -408,7 +429,8 @@ impl Cpu {
     *   Set delay timer = Vx.
     */
     fn op_fx15(&mut self) {
-        
+        let vx = (self.opcode & 0x0F00) >> 8;
+        self.delay_timer = self.registers[vx as usize];
     }
 
     /*
@@ -416,7 +438,8 @@ impl Cpu {
     *   Set sound timer = Vx.
     */
     fn op_fx18(&mut self) {
-        
+        let vx = (self.opcode & 0x0F00) >> 8;
+        self.sound_timer = self.registers[vx as usize];
     }
 
     /*
@@ -424,7 +447,8 @@ impl Cpu {
     *   Set I = I + Vx.
     */
     fn op_fx1e(&mut self) {
-        
+        let vx = (self.opcode & 0x0F00) >> 8;
+        self.index = self.index.wrapping_add(self.registers[vx as usize] as u16);
     }
 
     /*
@@ -432,7 +456,10 @@ impl Cpu {
     *   Set I = location of sprite for digit Vx.
     */
     fn op_fx29(&mut self) {
-        
+        let vx = (self.opcode & 0x0F00) >> 8;
+        let digit = self.registers[vx as usize];
+
+        self.index = constants::FONTSET_START_ADDRESS.wrapping_add(5 * digit) as u16;
     }
 
     /*
@@ -446,7 +473,12 @@ impl Cpu {
     *   or result in a float which will be truncated (345 / 10 = 34.5 = 34).
     */
     fn op_fx33(&mut self) {
-        
+        let vx = (self.opcode & 0x0F00) >> 8;
+        let value = self.registers[vx as usize];
+
+        self.memory[self.index as usize] = value / 100;
+        self.memory[(self.index + 1) as usize] = (value / 10) % 10;
+        self.memory[(self.index + 2) as usize] = value % 10;
     }
 
     /*
@@ -454,7 +486,11 @@ impl Cpu {
     *   Store registers V0 through Vx in memory starting at location I.
     */
     fn op_fx55(&mut self) {
-        
+        let vx = (self.opcode & 0x0F00) >> 8;
+
+        for register in 0..=vx {
+            self.memory[(self.index + register) as usize] = self.registers[register as usize];
+        }
     }
 
     /*
@@ -462,7 +498,11 @@ impl Cpu {
     *   Read registers V0 through Vx from memory starting at location I.
     */
     fn op_fx65(&mut self) {
-       
+        let vx = (self.opcode & 0x0F00) >> 8;
+
+        for register in 0..=vx {
+            self.registers[register as usize] = self.memory[(self.index + register) as usize];
+        }
     }
 
     /*
