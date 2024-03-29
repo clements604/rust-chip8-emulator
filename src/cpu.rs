@@ -4,6 +4,8 @@ use std::io::prelude::*;
 use std::num::Wrapping;
 use chrono::{Utc, TimeZone};
 use rand::prelude::*;
+use std::thread;
+use std::time::Duration;
 
 use crate::constants;
 use crate::constants::*;
@@ -110,8 +112,14 @@ impl Cpu {
     *   2nnn - CALL addr
     *   Call subroutine at nnn.
     */
+    /*fn op_2nnn(&mut self) {
+        self.sp += 1;
+        self.stack[self.sp as usize] = self.pc;
+        self.pc = self.opcode;
+    }*/
     fn op_2nnn(&mut self) {
         self.sp += 1;
+        self.pc += 2;
         self.stack[self.sp as usize] = self.pc;
         self.pc = self.opcode;
     }
@@ -315,6 +323,7 @@ impl Cpu {
     */
     fn op_annn(&mut self) {
         self.index = self.opcode & 0x0FFF;
+        self.pc += 2; // TODO added for debugging, possible undeeded
     }
 
     /*
@@ -506,45 +515,115 @@ impl Cpu {
     }
 
     /*
-    *   Table 0
-    */
-    fn table_0(&mut self) {
-        
-    }
-
-    /*
-    *   Table 8
-    */
-    fn table_8(&mut self) {
-       
-    }
-
-    /*
-    *   Table E
-    */
-    fn table_e(&mut self) {
-        
-    }
-
-    /*
-    *   Table F
-    */
-    fn table_f(&mut self) {
-        
-    }
-
-    /*
     *   OP_NULL
     *   Do nothing.
     */
-    fn op_null(&mut self) {}
+    fn op_null(&mut self) {
+        println!("op_null called");
+    }
 
     /*
     *   Cycle
     *   Fetch, decode, and execute an instruction.
     */
     pub fn cycle(&mut self) {
-        
+        println!("=====================  Cycle START  =====================");
+        // Fetch
+        let opcode = (self.memory[self.pc as usize] as u16) << 8 | (self.memory[(self.pc + 1) as usize] as u16);
+
+        self.pc += 2;
+
+        // Decode and execute.
+        println!("opcode {}", opcode);
+        match opcode & 0xF000 {
+            0x0000 => {
+                match opcode & 0x00FF {
+                    0xE0 => self.op_00e0(),
+                    0xEE => self.op_00ee(),
+                    _ => {
+                        println!("Unsupported 0x0 opcode: {}", (opcode & 0x00FF));
+                        self.op_null();
+                    },
+                }
+            }
+            0x1000 => self.op_1nnn(),
+            0x2000 => self.op_2nnn(),
+            0x3000 => self.op_3xkk(),
+            0x4000 => self.op_4xkk(),
+            0x5000 => self.op_5xy0(),
+            0x6000 => self.op_6xkk(),
+            0x7000 => self.op_7xkk(),
+            // TODO unsure of 0x8 range of opcodes in this match statement
+            0x8000 => {
+                match opcode & 0x000F {
+                    0x8000 => self.op_8xy0(),
+                    0x8001 => self.op_8xy1(),
+                    0x8002 => self.op_8xy2(),
+                    0x8003 => self.op_8xy3(),
+                    0x8004 => self.op_8xy4(),
+                    0x8005 => self.op_8xy5(),
+                    0x8006 => self.op_8xy6(),
+                    0x8007 => self.op_8xy7(),
+                    0x800E => self.op_8xye(),
+                    _ => {
+                        println!("Unsupported 0x8 opcode: {}", (opcode & 0x000F));
+                        self.op_null();
+                    },
+                }
+            },
+            // TODO unsure of 0x8 range of opcodes in this match statement
+            0x9000 => self.op_9xy0(),
+            0xA000 => self.op_annn(),
+            0xB000 => self.op_bnnn(),
+            0xC000 => self.op_cxkk(),
+            0xD000 => self.op_dxyn(),
+            // TODO unsure of 0xE range of opcodes in this match statement
+            0xE000 => {
+                match opcode & 0x00FF {
+                    0xE09E => self.op_ex9e(),
+                    0xE0A1 => self.op_exa1(),
+                    _ => {
+                        println!("Unsupported 0xE opcode: {}", (opcode & 0x00FF));
+                        self.op_null();
+                    },
+                }
+            },
+            // TODO unsure of 0xE range of opcodes in this match statement
+            // TODO unsure of 0xF range of opcodes in this match statement
+            0xF000 => {
+                match opcode & 0x00FF {
+                    0x0007 => self.op_fx07(),
+                    0x000A => self.op_fx0a(),
+                    0x0015 => self.op_fx15(),
+                    0x0018 => self.op_fx18(),
+                    0x001E => self.op_fx1e(),
+                    0x0029 => self.op_fx29(),
+                    0x0033 => self.op_fx33(),
+                    0x0055 => self.op_fx55(),
+                    0x0065 => self.op_fx65(),
+                    _ => {
+                        println!("Unsupported 0xF opcode: {}", (opcode & 0x00FF));
+                        self.op_null();
+                    },
+                }
+            }
+            // TODO unsure of 0xF range of opcodes in this match statement
+            _ => {
+                self.op_null();
+                self.pc += 2;
+            },
+        }
+
+        // Decrement delay and sound timers if necessary.
+        if self.delay_timer > 0 {
+            self.delay_timer -= 1;
+        }
+        if self.sound_timer > 0 {
+            self.sound_timer -= 1;
+        }
+        println!("=====================  Cycle FINISH  =====================");
+        // sleep for 5 seconds
+        //thread::sleep(Duration::from_secs(5));
     }
 
 }
