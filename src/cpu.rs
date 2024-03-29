@@ -2,7 +2,6 @@
 use std::fs::File;
 use std::io::prelude::*;
 use std::num::Wrapping;
-use chrono::{Utc, TimeZone};
 use rand::prelude::*;
 use std::thread;
 use std::time::Duration;
@@ -26,6 +25,7 @@ pub struct Cpu {
 }
 
 impl Cpu {
+    
     // TODO for the constructor, check if initial values are correct for all 0s
     pub fn new() -> Self {
         // Initialize the memory with 0s
@@ -55,6 +55,9 @@ impl Cpu {
     * Load a ROM into memory
     */
     pub fn load_rom(&mut self, file_name: String) {
+
+        println!("load_rom START");
+
         let mut file = File::open(file_name).expect("ROM file not found");
         let mut buffer: Vec<u8> = Vec::new();
 
@@ -77,6 +80,7 @@ impl Cpu {
     * Generate a random u8 number
     */
     fn rand_gen(&mut self) -> u8 {
+        println!("rand_gen START");
         let mut rng = rand::thread_rng();
         rng.gen_range(0..=255)
     }
@@ -86,6 +90,7 @@ impl Cpu {
     *   Clear the display.
     */
     fn op_00e0(&mut self) {
+        println!("op_00e0 START");
         for x in 0..self.video.len() {
             self.video[x] = 0;
         }
@@ -96,8 +101,9 @@ impl Cpu {
     *   Return from a subroutine.
     */
     fn op_00ee(&mut self) {
-        self.pc = self.stack[self.sp as usize];
+        println!("op_00ee START");
         self.sp -= 1;
+        self.pc = self.stack[self.sp as usize];
     }
 
     /*
@@ -105,23 +111,22 @@ impl Cpu {
     *   Jump to location nnn.
     */
     fn op_1nnn(&mut self) {
-        self.pc = self.opcode;
+        println!("op_1nnn START");
+        println!("self.pc {}", self.pc);
+        println!("self.opcode {}", self.opcode);
+        println!("self.opcode & 0x0FFF {}", self.opcode & 0x0FFF);
+        self.pc = self.opcode & 0x0FFF;
     }
 
     /*
     *   2nnn - CALL addr
     *   Call subroutine at nnn.
     */
-    /*fn op_2nnn(&mut self) {
-        self.sp += 1;
-        self.stack[self.sp as usize] = self.pc;
-        self.pc = self.opcode;
-    }*/
     fn op_2nnn(&mut self) {
-        self.sp += 1;
-        self.pc += 2;
+        println!("op_2nnn START");
         self.stack[self.sp as usize] = self.pc;
-        self.pc = self.opcode;
+        self.sp += 1;
+        self.pc = self.opcode & 0x0FFF;
     }
 
     /*
@@ -129,8 +134,9 @@ impl Cpu {
     *   Skip next instruction if Vx = kk.
     */
     fn op_3xkk(&mut self) {
+        println!("op_3xkk START");
         let vx: u16 = (self.opcode & 0x0F00) >> 8;
-        let kk: u16 = self.opcode & 0x00FFu16;
+        let kk: u16 = self.opcode & 0x00FF;
         if vx == kk {
             self.pc += 2;
         }
@@ -141,8 +147,9 @@ impl Cpu {
     *   Skip next instruction if Vx != kk.
     */
     fn op_4xkk(&mut self) {
+        println!("op_4xkk START");
         let vx: u16 = (self.opcode & 0x0F00) >> 8;
-        let kk: u16 = self.opcode & 0x00FFu16;
+        let kk: u16 = self.opcode & 0x00FF;
         if vx != kk {
             self.pc += 2;
         }
@@ -153,8 +160,9 @@ impl Cpu {
     *   Skip next instruction if Vx = Vy.
     */
     fn op_5xy0(&mut self) {
+        println!("op_5xy0 START");
         let vx = (self.opcode & 0x0F00) >> 8;
-        let vy = (self.opcode & 0x00F0u16) >> 4;
+        let vy = (self.opcode & 0x00F0) >> 4;
 
         if vx == vy {
             self.pc += 2;
@@ -166,8 +174,9 @@ impl Cpu {
     *   Set Vx = kk.
     */
     fn op_6xkk(&mut self) {
+        println!("op_6xkk START");
         let vx = (self.opcode & 16) >> 8;
-        let kk = self.opcode & 0x00FFu16;
+        let kk = self.opcode & 0x00FF;
 
         self.registers[vx as usize] = kk as u8;
     }
@@ -177,8 +186,9 @@ impl Cpu {
     *   Set Vx = Vx + kk.
     */
     fn op_7xkk(&mut self) {
+        println!("op_7xkk START");
         let vx = (self.opcode & 0x0F00) >> 8;
-        let kk = self.opcode & 0x00FFu16;
+        let kk = self.opcode & 0x00FF;
 
         self.registers[vx as usize] = (Wrapping(vx) + Wrapping(kk)).0 as u8; // TODO test wrapping add is correct
     }
@@ -188,6 +198,7 @@ impl Cpu {
     *   Set Vx = Vy.
     */
     fn op_8xy0(&mut self) {
+        println!("op_8xy0 START");
         let vx = (self.opcode & 0x0F00) >> 8;
         let vy = (self.opcode & 0x0F00) >> 4;
 
@@ -199,10 +210,12 @@ impl Cpu {
     *   Set Vx = Vx OR Vy.
     */
     fn op_8xy1(&mut self) {
+        println!("op_8xy1 START");
         let vx = (self.opcode & 0x0F00) >> 8;
         let vy = (self.opcode & 0x0F00) >> 4;
 
         self.registers[vx as usize] = self.registers[vx as usize] | self.registers[vy as usize];
+
     }
 
     /*
@@ -210,10 +223,12 @@ impl Cpu {
     *   Set Vx = Vx AND Vy.
     */
     fn op_8xy2(&mut self) {
+        println!("op_8xy2 START");
         let vx = (self.opcode & 0x0F00) >> 8;
         let vy = (self.opcode & 0x0F00) >> 4;
 
         self.registers[vx as usize] = self.registers[vx as usize] & self.registers[vy as usize];
+
     }
 
     /*
@@ -221,10 +236,12 @@ impl Cpu {
     *   Set Vx = Vx XOR Vy.
     */
     fn op_8xy3(&mut self) {
+        println!("op_8xy3 START");
         let vx = (self.opcode & 0x0F00) >> 8;
         let vy = (self.opcode & 0x0F00) >> 4;
 
         self.registers[vx as usize] = self.registers[vx as usize] ^ self.registers[vy as usize];
+
     }
 
     /*
@@ -232,6 +249,7 @@ impl Cpu {
     *   Set Vx = Vx + Vy, set VF = carry.
     */
     fn op_8xy4(&mut self) {
+        println!("op_8xy4 START");
         let vx = (self.opcode & 0x0F00) >> 8;
         let vy = (self.opcode & 0x0F00) >> 4;
 
@@ -244,6 +262,7 @@ impl Cpu {
         }
 
         self.registers[vx as usize] = sum as u8;
+
     }
 
     /*
@@ -251,6 +270,7 @@ impl Cpu {
     *   Set Vx = Vx - Vy, set VF = NOT borrow.
     */
     fn op_8xy5(&mut self) {
+        println!("op_8xy5 START");
         let vx = (self.opcode & 0x0F00) >> 8;
         let vy = (self.opcode & 0x0F00) >> 4;
 
@@ -261,6 +281,7 @@ impl Cpu {
         }
 
         self.registers[vx as usize] -= self.registers[vy as usize];
+        
     }
 
     /*
@@ -268,11 +289,13 @@ impl Cpu {
     *   Set Vx = Vx SHR 1.
     */
     fn op_8xy6(&mut self) {
+        println!("op_8xy6 START");
         let vx = (self.opcode & 0x0F00) >> 8;
         let lsb = vx & 0x1;// TODO unsure if this is right way to get the LSB
 
         self.registers[0xF] = lsb as u8;
         self.registers[vx as usize] >>= 1;
+
     }
 
     /*
@@ -280,6 +303,7 @@ impl Cpu {
     *   Set Vx = Vy - Vx, set VF = NOT borrow.
     */
     fn op_8xy7(&mut self) {
+        println!("op_8xy7 START");
         let vx = (self.opcode & 0x0F00) >> 8;
         let vy = (self.opcode & 0x0F00) >> 4;
 
@@ -290,6 +314,7 @@ impl Cpu {
         }
 
         self.registers[vy as usize] -= self.registers[vx as usize];
+
     }
 
     /*
@@ -297,11 +322,13 @@ impl Cpu {
     *   Set Vx = Vx SHL 1.
     */
     fn op_8xye(&mut self) {
+        println!("op_8xye START");
         let vx = (self.opcode & 0x0F00) >> 8;
         let msb = vx & 0x16; // TODO unsure if this is right way to get the MSB
 
         self.registers[0xF] = msb as u8;
         self.registers[vx as usize] <<= 1;
+
     }
 
     /*
@@ -309,12 +336,14 @@ impl Cpu {
     *   Skip next instruction if Vx != Vy.
     */
     fn op_9xy0(&mut self) {
+        println!("op_9xy0 START");
         let vx = (self.opcode & 0x0F00) >> 8;
         let vy = (self.opcode & 0x0F00) >> 4;
 
         if self.registers[vx as usize] != self.registers[vy as usize] {
             self.pc += 2;
         }
+
     }
 
     /*
@@ -322,8 +351,9 @@ impl Cpu {
     *   Set I = nnn.
     */
     fn op_annn(&mut self) {
+        println!("op_annn START");
         self.index = self.opcode & 0x0FFF;
-        self.pc += 2; // TODO added for debugging, possible undeeded
+
     }
 
     /*
@@ -331,6 +361,7 @@ impl Cpu {
     *   Jump to location nnn + V0.
     */
     fn op_bnnn(&mut self) {
+        println!("op_bnnn START");
         self.pc = (self.registers[0] as u16) + (self.opcode & 0x0FFF);
     }
 
@@ -339,6 +370,7 @@ impl Cpu {
     *   Set Vx = random byte AND kk.
     */
     fn op_cxkk(&mut self) {
+        println!("op_cxkk START");
         let vx = (self.opcode & 0x0F00) >> 8;
         let kk = (self.opcode & 0x00FF) as u8;
 
@@ -348,13 +380,13 @@ impl Cpu {
     /*
     *   Dxyn - DRW Vx, Vy, nibble
     *   Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision.
+    *   TODO maybe incorrect
     */
     fn op_dxyn(&mut self) { // TODO Unsure of this implementation
+        println!("op_dxyn START");
         let vx = (self.opcode & 0x0F00) >> 8;
         let vy = (self.opcode & 0x0F00) >> 4;
         let height = self.opcode & 0x000F;
-        let x_pos = self.registers[vx as usize] % constants::VIDEO_WIDTH;
-        let y_pos = self.registers[vy as usize] % constants::VIDEO_HEIGHT;
 
         self.registers[0xF] = 0; // Setting collision flag
 
@@ -383,6 +415,7 @@ impl Cpu {
     *   Skip next instruction if key with the value of Vx is pressed.
     */
     fn op_ex9e(&mut self) {
+        println!("op_ex9e START");
         let vx = (self.opcode & 0x0F00) >> 8;
         let key = self.registers[vx as usize] as usize;
         let key_state = self.keypad[key];
@@ -397,6 +430,7 @@ impl Cpu {
     *   Skip next instruction if key with the value of Vx is not pressed.
     */
     fn op_exa1(&mut self) {
+        println!("op_exa1 START");
         let vx = (self.opcode & 0x0F00) >> 8;
         let key = self.registers[vx as usize] as usize;
         let key_state = self.keypad[key];
@@ -411,6 +445,7 @@ impl Cpu {
     *   Set Vx = delay timer value.
     */
     fn op_fx07(&mut self) {
+        println!("op_fx07 START");
         let vx = (self.opcode & 0x0F00) >> 8;
         self.registers[vx as usize] = self.delay_timer;
     }
@@ -422,6 +457,7 @@ impl Cpu {
     *   This has the effect of running the same instruction repeatedly.
     */
     fn op_fx0a(&mut self) {
+        println!("op_fx0a START");
         let vx = (self.opcode & 0x0F00) >> 8;
 
         for key in 0..self.keypad.len() {
@@ -438,6 +474,7 @@ impl Cpu {
     *   Set delay timer = Vx.
     */
     fn op_fx15(&mut self) {
+        println!("op_fx15 START");
         let vx = (self.opcode & 0x0F00) >> 8;
         self.delay_timer = self.registers[vx as usize];
     }
@@ -447,6 +484,7 @@ impl Cpu {
     *   Set sound timer = Vx.
     */
     fn op_fx18(&mut self) {
+        println!("op_fx18 START");
         let vx = (self.opcode & 0x0F00) >> 8;
         self.sound_timer = self.registers[vx as usize];
     }
@@ -456,6 +494,7 @@ impl Cpu {
     *   Set I = I + Vx.
     */
     fn op_fx1e(&mut self) {
+        println!("op_fx1e START");
         let vx = (self.opcode & 0x0F00) >> 8;
         self.index = self.index.wrapping_add(self.registers[vx as usize] as u16);
     }
@@ -465,6 +504,7 @@ impl Cpu {
     *   Set I = location of sprite for digit Vx.
     */
     fn op_fx29(&mut self) {
+        println!("op_fx29 START");
         let vx = (self.opcode & 0x0F00) >> 8;
         let digit = self.registers[vx as usize];
 
@@ -482,6 +522,7 @@ impl Cpu {
     *   or result in a float which will be truncated (345 / 10 = 34.5 = 34).
     */
     fn op_fx33(&mut self) {
+        println!("op_fx33 START");
         let vx = (self.opcode & 0x0F00) >> 8;
         let value = self.registers[vx as usize];
 
@@ -495,6 +536,7 @@ impl Cpu {
     *   Store registers V0 through Vx in memory starting at location I.
     */
     fn op_fx55(&mut self) {
+        println!("op_fx55 START");
         let vx = (self.opcode & 0x0F00) >> 8;
 
         for register in 0..=vx {
@@ -507,6 +549,7 @@ impl Cpu {
     *   Read registers V0 through Vx from memory starting at location I.
     */
     fn op_fx65(&mut self) {
+        println!("op_fx65 START");
         let vx = (self.opcode & 0x0F00) >> 8;
 
         for register in 0..=vx {
@@ -528,21 +571,27 @@ impl Cpu {
     */
     pub fn cycle(&mut self) {
         println!("=====================  Cycle START  =====================");
+        println!("self.pc {}", self.pc);
+        println!("self.memory[self.pc as usize] as u16 {}", self.memory[self.pc as usize] as u16);
+        println!("self.memory[(self.pc + 1) as usize] as u16 {}", self.memory[(self.pc + 1) as usize] as u16);
+
         // Fetch
-        let opcode = (self.memory[self.pc as usize] as u16) << 8 | (self.memory[(self.pc + 1) as usize] as u16);
+        self.opcode = (self.memory[self.pc as usize] as u16) << 8 | self.memory[(self.pc + 1) as usize] as u16;
+
+        println!("self.opcode {}", self.opcode);
+        println!("self.opcode & 0xF000 {}", self.opcode & 0xF000);
 
         self.pc += 2;
 
         // Decode and execute.
-        println!("opcode {}", opcode);
-        match opcode & 0xF000 {
+        println!("opcode {}", self.opcode);
+        match self.opcode & 0xF000 {
             0x0000 => {
-                match opcode & 0x00FF {
+                match self.opcode & 0x00FF {
                     0xE0 => self.op_00e0(),
                     0xEE => self.op_00ee(),
                     _ => {
-                        println!("Unsupported 0x0 opcode: {}", (opcode & 0x00FF));
-                        self.op_null();
+                        panic!("Unsupported 0x0 opcode: {}", (self.opcode & 0x00FF));
                     },
                 }
             }
@@ -555,7 +604,7 @@ impl Cpu {
             0x7000 => self.op_7xkk(),
             // TODO unsure of 0x8 range of opcodes in this match statement
             0x8000 => {
-                match opcode & 0x000F {
+                match self.opcode & 0x000F {
                     0x8000 => self.op_8xy0(),
                     0x8001 => self.op_8xy1(),
                     0x8002 => self.op_8xy2(),
@@ -566,8 +615,7 @@ impl Cpu {
                     0x8007 => self.op_8xy7(),
                     0x800E => self.op_8xye(),
                     _ => {
-                        println!("Unsupported 0x8 opcode: {}", (opcode & 0x000F));
-                        self.op_null();
+                        panic!("Unsupported 0x8 opcode: {}", (self.opcode & 0x000F));
                     },
                 }
             },
@@ -579,19 +627,18 @@ impl Cpu {
             0xD000 => self.op_dxyn(),
             // TODO unsure of 0xE range of opcodes in this match statement
             0xE000 => {
-                match opcode & 0x00FF {
+                match self.opcode & 0x00FF {
                     0xE09E => self.op_ex9e(),
                     0xE0A1 => self.op_exa1(),
                     _ => {
-                        println!("Unsupported 0xE opcode: {}", (opcode & 0x00FF));
-                        self.op_null();
+                        panic!("Unsupported 0xE opcode: {}", (self.opcode & 0x00FF));
                     },
                 }
             },
             // TODO unsure of 0xE range of opcodes in this match statement
             // TODO unsure of 0xF range of opcodes in this match statement
             0xF000 => {
-                match opcode & 0x00FF {
+                match self.opcode & 0x00FF {
                     0x0007 => self.op_fx07(),
                     0x000A => self.op_fx0a(),
                     0x0015 => self.op_fx15(),
@@ -602,15 +649,13 @@ impl Cpu {
                     0x0055 => self.op_fx55(),
                     0x0065 => self.op_fx65(),
                     _ => {
-                        println!("Unsupported 0xF opcode: {}", (opcode & 0x00FF));
-                        self.op_null();
+                        panic!("Unsupported 0xF opcode: {}", (self.opcode & 0x00FF));
                     },
                 }
             }
             // TODO unsure of 0xF range of opcodes in this match statement
             _ => {
                 self.op_null();
-                self.pc += 2;
             },
         }
 
@@ -622,8 +667,8 @@ impl Cpu {
             self.sound_timer -= 1;
         }
         println!("=====================  Cycle FINISH  =====================");
-        // sleep for 5 seconds
-        //thread::sleep(Duration::from_secs(5));
+        // TODO DEBUG DELETE
+        //thread::sleep(Duration::from_secs(3));
     }
 
 }
