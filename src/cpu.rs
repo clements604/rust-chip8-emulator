@@ -209,7 +209,7 @@ impl Cpu {
     fn op_8xy0(&mut self) {
         println!("op_8xy0 START");
         let vx = (self.opcode & 0x0F00) >> 8;
-        let vy = (self.opcode & 0x0F00) >> 4;
+        let vy = (self.opcode & 0x00F0) >> 4;
 
         self.registers[vx as usize] = self.registers[vy as usize];
     }
