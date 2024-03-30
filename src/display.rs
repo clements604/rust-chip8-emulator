@@ -1,0 +1,74 @@
+extern crate sdl2;
+
+use sdl2::pixels::PixelFormatEnum;
+use sdl2::rect::Point;
+use sdl2::render::Texture;
+use sdl2::video::{Window, WindowContext};
+use sdl2::render::{Canvas, TextureCreator};
+use sdl2::pixels::Color;
+
+const scale_factor: u32 = 10;
+
+pub struct Display {
+    canvas: sdl2::render::Canvas<Window>,
+    window_width: u32,
+    window_height: u32,
+    texture_width: u32,
+    texture_height: u32
+}
+
+impl Display {
+    pub fn new(title: &String, window_width: u32, window_height: u32, texture_width: u32, texture_height: u32) -> Self {
+        let sdl_context = sdl2::init().unwrap();
+        let video_subsystem = sdl_context.video().unwrap();
+
+        let window = video_subsystem.window(title, window_width * scale_factor, window_height * scale_factor)
+            .position_centered()
+            .opengl()
+            .build()
+            .unwrap();
+
+            let mut canvas: sdl2::render::Canvas<Window> = window.into_canvas()
+            .build()
+            .unwrap();
+
+            canvas.set_scale(10.0, 10.0).unwrap();
+            canvas.set_draw_color(Color::RGB(0, 0, 0));
+            canvas.clear();
+            canvas.present();
+
+            Display {
+            canvas: canvas,
+            window_width: window_width,
+            window_height: window_height,
+            texture_width: texture_width,
+            texture_height: texture_height
+        }
+    }
+
+    pub fn redraw(&mut self, video_buffer: &[u8]) {
+        self.canvas.set_draw_color(Color::RGB(0, 0, 0));
+        self.canvas.clear();
+        self.canvas.set_draw_color(Color::RGB(255, 255, 255));
+
+        let mut x = 0; // x position of the pixel
+        let mut y = 0; // y position of the pixel
+
+        let display_divisor: i32 = (self.texture_width as i32 - 1).into();
+
+        for pixel in video_buffer.iter() {
+            if *pixel != 0 {
+                self.canvas.draw_point(Point::new(x, y)).unwrap();
+            }
+            if x != 0 && (x % display_divisor) == 0 {
+                x = 0;
+                y += 1;
+            } else {
+                x += 1;
+            }
+        }
+
+        self.canvas.present();
+    }
+
+}

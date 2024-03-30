@@ -17,12 +17,12 @@ pub struct Cpu {
     pc: u16, // program counter
     stack: [u16; 16],//16
     sp: u8, // stack pointer
-    delay_timer: u8,
-    sound_timer: u8,
+    pub delay_timer: u8,
+    pub sound_timer: u8,
     pub keypad: [u8; 16], //16
-    pub display: [u32; 64 * 32],//64 * 32
+    pub display: [u8; 64 * 32],//64 * 32
     opcode: u16,
-    draw_flag: bool,
+    pub draw_flag: bool,
     cycle_count: u64,// TODO DEBUG DELETE
 }
 
@@ -425,7 +425,7 @@ impl Cpu {
                 
                 // XOR the sprite pixel onto the display
                 let display_index = screen_y * VIDEO_WIDTH as usize + screen_x;
-                self.display[display_index] ^= sprite_pixel as u32;
+                self.display[display_index] ^= sprite_pixel;
             }
 
         }
@@ -684,13 +684,8 @@ impl Cpu {
             self.sound_timer -= 1;
         }
         // TODO DEBUG DELETE
-        //thread::sleep(Duration::from_secs(3));
-        // Wait for user to press any key and prompt for input, continue after key press
-        let mut input = String::new();
-        //std::io::stdin().read_line(&mut input).unwrap();
-
+        //thread::sleep(Duration::from_secs(1));
+       
     }
 
 }
-
-type InstrPtr = fn(&mut Cpu);

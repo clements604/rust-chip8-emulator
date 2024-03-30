@@ -1,11 +1,11 @@
 use std::env;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use crate::constants::VIDEO_WIDTH;
 
 mod cpu;
 mod constants;
-mod platform;
+mod display;
 
 /*fn main() {
     let cpu: cpu::Cpu = cpu::Cpu::new();
@@ -22,33 +22,37 @@ fn main() {
     if args.len() != 4 {
         panic!("Usage: {} <Scale> <Delay> <ROM>\n", args[0]);
     }
-
-    let video_scale = args[1].parse::<u32>().unwrap();
-    let cycle_delay = args[2].parse::<u32>().unwrap();
     let rom_path: String = args[3].clone();
 
-    let mut platform = platform::Platform::new(&"Chip-8 Emulator".to_string(), 64 * video_scale, 32 * video_scale, 64, 32);
+    let mut display = display::Display::new(&"Chip-8 Emulator".to_string(), 64, 32, 64, 32);
 
     let mut cpu = cpu::Cpu::new(); // CHIP8 CPU
     cpu.load_rom(rom_path);
 
-    let video_pitch = (std::mem::size_of_val(&cpu.display[0]) * VIDEO_WIDTH as usize) as usize; // TODO likely incorrect
-
-    let mut last_cycle_time =Instant::now();
-
     let mut quit: bool = false;
+
+    let mut cycle_time = Instant::now();
 
     while ! quit {
         //quit = platform.process_input(&mut cpu.keypad);
 
-        let current_time = Instant::now();
-        let dt = current_time.duration_since(last_cycle_time);
-
-        if dt.as_millis() > cycle_delay as u128 {
-            last_cycle_time = current_time;
-            cpu.cycle();
-            //platform.update_with_buffer(&cpu.video, video_pitch);
+        if cpu.draw_flag {
+            display.redraw(&cpu.display);
+            cpu.draw_flag = false;
         }
+
+        cpu.cycle();
+
+        if cycle_time.elapsed() >= Duration::from_millis(1000 / 60) {
+            if cpu.delay_timer > 0 {
+                cpu.delay_timer -= 1;
+            }
+            if cpu.sound_timer > 0 {
+                cpu.sound_timer -= 1;
+            }
+            cycle_time = Instant::now();
+        }
+        ::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 2564));
     }
 
 }
