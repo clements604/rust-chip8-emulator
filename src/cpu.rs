@@ -282,16 +282,8 @@ impl Cpu {
         let vx = (self.opcode & 0x0F00) >> 8;
         let vy = (self.opcode & 0x00F0) >> 4;
 
-        let (sum, overflow) = (self.registers[vx as usize]).overflowing_add(self.registers[vy as usize]);
-
-        if overflow {
-            self.registers[0xF] = 0;
-        } else {
-            self.registers[0xF] = 1;
-        }
-
-        self.registers[vx as usize] = sum;
-        
+        self.registers[0xF] = if self.registers[vx as usize] > self.registers[vy as usize] { 1 } else { 0 };
+        self.registers[vx as usize] = self.registers[vx as usize].wrapping_sub(self.registers[vy as usize]);
     }
 
     /*
