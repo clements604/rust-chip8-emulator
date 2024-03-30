@@ -221,7 +221,7 @@ impl Cpu {
     fn op_8xy1(&mut self) {
         println!("op_8xy1 START");
         let vx = (self.opcode & 0x0F00) >> 8;
-        let vy = (self.opcode & 0x0F00) >> 4;
+        let vy = (self.opcode & 0x00F0) >> 4;
 
         self.registers[vx as usize] = self.registers[vx as usize] | self.registers[vy as usize];
 
@@ -234,7 +234,7 @@ impl Cpu {
     fn op_8xy2(&mut self) {
         println!("op_8xy2 START");
         let vx = (self.opcode & 0x0F00) >> 8;
-        let vy = (self.opcode & 0x0F00) >> 4;
+        let vy = (self.opcode & 0x00F0) >> 4;
 
         self.registers[vx as usize] = self.registers[vx as usize] & self.registers[vy as usize];
 
@@ -247,7 +247,7 @@ impl Cpu {
     fn op_8xy3(&mut self) {
         println!("op_8xy3 START");
         let vx = (self.opcode & 0x0F00) >> 8;
-        let vy = (self.opcode & 0x0F00) >> 4;
+        let vy = (self.opcode & 0x00F0) >> 4;
 
         self.registers[vx as usize] = self.registers[vx as usize] ^ self.registers[vy as usize];
 
@@ -280,7 +280,7 @@ impl Cpu {
     fn op_8xy5(&mut self) {
         println!("op_8xy5 START");
         let vx = (self.opcode & 0x0F00) >> 8;
-        let vy = (self.opcode & 0x0F00) >> 4;
+        let vy = (self.opcode & 0x00F0) >> 4;
 
         let (sum, overflow) = (self.registers[vx as usize]).overflowing_add(self.registers[vy as usize]);
 
@@ -321,7 +321,7 @@ impl Cpu {
     fn op_8xy7(&mut self) {
         println!("op_8xy7 START");
         let vx = (self.opcode & 0x0F00) >> 8;
-        let vy = (self.opcode & 0x0F00) >> 4;
+        let vy = (self.opcode & 0x00F0) >> 4;
 
         let (sum, overflow) = (self.registers[vx as usize]).overflowing_add(self.registers[vy as usize]);
 
@@ -628,14 +628,14 @@ impl Cpu {
             0x8000 => {
                 match self.opcode & 0x000F {
                     0x0 => self.op_8xy0(),
-                    0x8001 => self.op_8xy1(),
-                    0x8002 => self.op_8xy2(),
-                    0x8003 => self.op_8xy3(),
-                    0x8004 => self.op_8xy4(),
-                    0x8005 => self.op_8xy5(),
-                    0x8006 => self.op_8xy6(),
-                    0x8007 => self.op_8xy7(),
-                    0x800E => self.op_8xye(),
+                    0x1 => self.op_8xy1(),
+                    0x2 => self.op_8xy2(),
+                    0x3 => self.op_8xy3(),
+                    0x4 => self.op_8xy4(),
+                    0x5 => self.op_8xy5(),
+                    0x6 => self.op_8xy6(),
+                    0x7 => self.op_8xy7(),
+                    0xE => self.op_8xye(),
                     _ => {
                         panic!("Unsupported 0x8 opcode: {}", (self.opcode & 0x000F));
                     },
@@ -657,15 +657,15 @@ impl Cpu {
             },
             0xF000 => {
                 match self.opcode & 0x00FF {
-                    0x0007 => self.op_fx07(),
-                    0x000A => self.op_fx0a(),
-                    0x0015 => self.op_fx15(),
-                    0x0018 => self.op_fx18(),
-                    0x001E => self.op_fx1e(),
-                    0x0029 => self.op_fx29(),
-                    0x0033 => self.op_fx33(),
-                    0x0055 => self.op_fx55(),
-                    0x0065 => self.op_fx65(),
+                    0x7 => self.op_fx07(),
+                    0xA => self.op_fx0a(),
+                    0x15 => self.op_fx15(),
+                    0x18 => self.op_fx18(),
+                    0x1E => self.op_fx1e(),
+                    0x29 => self.op_fx29(),
+                    0x33 => self.op_fx33(),
+                    0x55 => self.op_fx55(),
+                    0x65 => self.op_fx65(),
                     _ => {
                         panic!("Unsupported 0xF opcode: {}", (self.opcode & 0x00FF));
                     },

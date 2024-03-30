@@ -32,7 +32,7 @@ fn main() {
     let mut cpu = cpu::Cpu::new(); // CHIP8 CPU
     cpu.load_rom(rom_path);
 
-    let video_pitch = (std::mem::size_of_val(&cpu.video[0]) * VIDEO_WIDTH as usize) as usize; // TODO likely incorrect
+    let video_pitch = (std::mem::size_of_val(&cpu.display[0]) * VIDEO_WIDTH as usize) as usize; // TODO likely incorrect
 
     let mut last_cycle_time =Instant::now();
 
