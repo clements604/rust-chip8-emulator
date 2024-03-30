@@ -1,5 +1,7 @@
 use std::env;
 use std::time::{Duration, Instant};
+use sdl2::event::Event;
+use sdl2::keyboard::Keycode;
 
 use crate::constants::VIDEO_WIDTH;
 
@@ -32,9 +34,25 @@ fn main() {
     let mut quit: bool = false;
 
     let mut cycle_time = Instant::now();
+    let mut event_pump = display.sdl_context.event_pump().unwrap();
 
     while ! quit {
         //quit = platform.process_input(&mut cpu.keypad);
+
+        for event in event_pump.poll_iter() {
+            println!("{:?}", event);
+            match event {
+                Event::Quit { .. }
+                | Event::KeyDown {
+                    keycode: Some(Keycode::Escape),
+                    ..
+                } => {
+                    quit = true;
+                    break;
+                },
+                _ => println!("Unhandled event"),
+            }
+        }
 
         if cpu.draw_flag {
             display.redraw(&cpu.display);

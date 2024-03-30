@@ -10,6 +10,7 @@ use sdl2::pixels::Color;
 const scale_factor: u32 = 10;
 
 pub struct Display {
+    pub sdl_context: sdl2::Sdl,
     canvas: sdl2::render::Canvas<Window>,
     window_width: u32,
     window_height: u32,
@@ -38,12 +39,13 @@ impl Display {
             canvas.present();
 
             Display {
-            canvas: canvas,
-            window_width: window_width,
-            window_height: window_height,
-            texture_width: texture_width,
-            texture_height: texture_height
-        }
+                sdl_context: sdl_context,
+                canvas: canvas,
+                window_width: window_width,
+                window_height: window_height,
+                texture_width: texture_width,
+                texture_height: texture_height
+            }
     }
 
     pub fn redraw(&mut self, video_buffer: &[u8]) {
