@@ -627,7 +627,7 @@ impl Cpu {
             0x7000 => self.op_7xkk(),
             0x8000 => {
                 match self.opcode & 0x000F {
-                    0x8000 => self.op_8xy0(),
+                    0x0 => self.op_8xy0(),
                     0x8001 => self.op_8xy1(),
                     0x8002 => self.op_8xy2(),
                     0x8003 => self.op_8xy3(),
