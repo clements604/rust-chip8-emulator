@@ -648,8 +648,8 @@ impl Cpu {
             0xD000 => self.op_dxyn(),
             0xE000 => {
                 match self.opcode & 0x00FF {
-                    0xE09E => self.op_ex9e(),
-                    0xE0A1 => self.op_exa1(),
+                    0x9E => self.op_ex9e(),
+                    0xA1 => self.op_exa1(),
                     _ => {
                         panic!("Unsupported 0xE opcode: {}", (self.opcode & 0x00FF));
                     },
@@ -683,7 +683,6 @@ impl Cpu {
         if self.sound_timer > 0 {
             self.sound_timer -= 1;
         }
-        println!("=====================  Cycle FINISH  =====================");
         // TODO DEBUG DELETE
         //thread::sleep(Duration::from_secs(3));
         // Wait for user to press any key and prompt for input, continue after key press
