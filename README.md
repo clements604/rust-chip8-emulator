@@ -1,4 +1,4 @@
-# Rust Chip-8 Emulator (interpreter)
+# Rust Chip-8 Emulator (Interpreter)
 
 A simple Chip-8 emulator written in Rust.
 
