@@ -3,24 +3,25 @@ use std::time::{Duration, Instant};
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 
-use crate::constants::VIDEO_WIDTH;
-
 mod cpu;
 mod constants;
 mod display;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    println!("{:?}", args);
 
-    if args.len() != 4 {
-        panic!("Usage: {} <Scale> <Delay> <ROM>\n", args[0]);
+    if args.len() != 2 {
+        panic!("Usage: {} <ROM>\n", args[0]);
     }
-    let rom_path: String = args[3].clone();
+    let rom_path: String = args[1].clone();
 
-    let mut display = display::Display::new(&"Chip-8 Emulator".to_string(), 64, 32, 64, 32);
+    let mut display = display::Display::new(&constants::APPLICATION_TITLE.to_string(),
+                                                     constants::VIDEO_WIDTH as u32,
+                                                     constants::VIDEO_HEIGHT as u32,
+                                                     constants::VIDEO_WIDTH as u32,
+                                                     constants::VIDEO_HEIGHT as u32);
 
-    let mut cpu = cpu::Cpu::new(); // CHIP8 CPU
+    let mut cpu = cpu::Cpu::new();
     cpu.load_rom(rom_path);
 
     let mut quit: bool = false;
@@ -29,9 +30,6 @@ fn main() {
     let mut event_pump = display.sdl_context.event_pump().unwrap();
 
     while ! quit {
-
-        //std::thread::sleep(Duration::from_millis(100));
-
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit { .. }
@@ -93,9 +91,8 @@ fn main() {
             }
             cycle_time = Instant::now();
         }
-        //::std::thread::sleep(Duration::new(0, 1_000_000_000u32 / 2564));
 
-        ::std::thread::sleep(Duration::from_micros(1000)); // Sleep for 1 millisecond
+        ::std::thread::sleep(Duration::from_micros(1000));
     }
 
 }
