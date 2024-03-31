@@ -17,8 +17,6 @@ fn main() {
 
     let mut display = display::Display::new(&constants::APPLICATION_TITLE.to_string(),
                                                      constants::VIDEO_WIDTH as u32,
-                                                     constants::VIDEO_HEIGHT as u32,
-                                                     constants::VIDEO_WIDTH as u32,
                                                      constants::VIDEO_HEIGHT as u32);
 
     let mut cpu = cpu::Cpu::new();

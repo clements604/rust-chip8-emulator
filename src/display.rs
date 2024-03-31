@@ -1,29 +1,25 @@
 extern crate sdl2;
 
-use sdl2::pixels::PixelFormatEnum;
 use sdl2::rect::Point;
-use sdl2::render::Texture;
-use sdl2::video::{Window, WindowContext};
-use sdl2::render::{Canvas, TextureCreator};
+use sdl2::video::Window;
 use sdl2::pixels::Color;
 
-const scale_factor: u32 = 10;
+const SCALE_FACTOR: u32 = 10;
 
 pub struct Display {
     pub sdl_context: sdl2::Sdl,
     canvas: sdl2::render::Canvas<Window>,
     window_width: u32,
-    window_height: u32,
-    texture_width: u32,
-    texture_height: u32
+    #[allow(dead_code)]
+    window_height: u32
 }
 
 impl Display {
-    pub fn new(title: &String, window_width: u32, window_height: u32, texture_width: u32, texture_height: u32) -> Self {
+    pub fn new(title: &String, window_width: u32, window_height: u32) -> Self {
         let sdl_context = sdl2::init().unwrap();
         let video_subsystem = sdl_context.video().unwrap();
 
-        let window = video_subsystem.window(title, window_width * scale_factor, window_height * scale_factor)
+        let window = video_subsystem.window(title, window_width * SCALE_FACTOR, window_height * SCALE_FACTOR)
             .position_centered()
             .opengl()
             .build()
@@ -42,9 +38,7 @@ impl Display {
                 sdl_context: sdl_context,
                 canvas: canvas,
                 window_width: window_width,
-                window_height: window_height,
-                texture_width: texture_width,
-                texture_height: texture_height
+                window_height: window_height
             }
     }
 
@@ -56,7 +50,7 @@ impl Display {
         let mut x = 0; // x position of the pixel
         let mut y = 0; // y position of the pixel
 
-        let display_divisor: i32 = (self.texture_width as i32 - 1).into();
+        let display_divisor: i32 = (self.window_width as i32 - 1).into();
 
         for pixel in video_buffer.iter() {
             if *pixel != 0 {
