@@ -1,10 +1,12 @@
+pub const APPLICATION_TITLE: &str = "Chip-8 Emulator";
+
 pub const ROM_START: u16 = 0x200; // The start position of the ROM in memory
 pub const FONTSET_SIZE: usize = 80; // The size of the fontset
 pub const FONTSET_START_ADDRESS: u8 = 0x50; // The start position of the fontset in memory
-pub const KEY_COUNT: u8 = 16;
-pub const MEMORY_SIZE: u16 = 4096;
-pub const REGISTER_COUNT: u8 = 16;
-pub const STACK_LEVELS: u8 = 16;
+pub const KEY_COUNT: usize = 16;
+pub const MEMORY_SIZE: usize = 4096;
+pub const REGISTER_COUNT: usize = 16;
+pub const STACK_LEVELS: usize = 16;
 pub const VIDEO_HEIGHT: u8 = 32;
 pub const VIDEO_WIDTH: u8 = 64;
 

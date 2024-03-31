@@ -1,7 +1,10 @@
 [package]
-name = "chip8"
-version = "0.1.0"
+name = "chip8-emulator"
+description = "A simple Chip-8 emulator written in Rust"
+version = "1.0.0"
 edition = "2021"
+authors = ["Joshua Clements <clements604@gmail.com>"]
+license = "gpl-3.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

@@ -1,6 +1,5 @@
 
 use std::fmt;
-
 use std::fs::File;
 use std::io::prelude::*;
 use rand::prelude::*;
@@ -10,49 +9,72 @@ use crate::constants::*;
 
 pub struct Cpu {
 
-    registers: [u8; 16],
-    memory: [u8; 4096],
-    index: u16, //  generally used to store memory addresses
+    registers: [u8; constants::REGISTER_COUNT],
+    memory: [u8; constants::MEMORY_SIZE],
+    index: u16,
     pc: u16, // program counter
-    stack: [u16; 16],//16
+    stack: [u16; constants::STACK_LEVELS],
     sp: u8, // stack pointer
     pub delay_timer: u8,
     pub sound_timer: u8,
-    pub keyboard: [u8; 16], //16
-    pub display: [u8; 64 * 32],//64 * 32
+    pub keyboard: [u8; constants::KEY_COUNT],
+    pub display: [u8; constants::VIDEO_WIDTH as usize * constants::VIDEO_HEIGHT as usize],
     opcode: u16,
     pub draw_flag: bool,
 }
 
 impl fmt::Display for Cpu {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Cpu {{\n\nregisters: {:?},\n\nmemory: {:?},\n\nindex: {},\n\npc: {},\n\nstack: {:?},\n\nsp: {},\n\ndelay_timer: {},\n\nsound_timer: {},\n\nkeyboard: {:?},\n\ndisplay: {:?},\n\nopcode: {},\n\ndraw_flag: {}\n\n}}", self.registers, self.memory, self.index, self.pc, self.stack, self.sp, self.delay_timer, self.sound_timer, self.keyboard, self.display, self.opcode, self.draw_flag)
+        write!(f, "Cpu {{\n\n\
+            registers: {:?},\n\n\
+            memory: {:?},\n\n\
+            index: {},\n\n\
+            pc: {},\n\n\
+            stack: {:?},\n\n\
+            sp: {},\n\n\
+            delay_timer: {},\n\n\
+            sound_timer: {},\n\n\
+            keyboard: {:?},\n\n\
+            display: {:?},\n\n\
+            opcode: {},\n\n\
+            draw_flag: {}\n\n\
+        }}", self.registers,
+             self.memory,
+             self.index,
+             self.pc,
+             self.stack,
+             self.sp,
+             self.delay_timer,
+             self.sound_timer,
+             self.keyboard,
+             self.display,
+             self.opcode,
+             self.draw_flag)
     }
 }
 
 impl Cpu {
     
-    // TODO for the constructor, check if initial values are correct for all 0s
     pub fn new() -> Self {
         // Initialize the memory with 0s
-        let mut memory = [0; 4096];
+        let mut memory = [0; constants::MEMORY_SIZE];
         // Load the fontset into memory
         for i in 0..constants::FONTSET_SIZE {
-            memory[FONTSET_START_ADDRESS as usize + i] = FONTSET[i]; // Load the fontset into memory
+            memory[FONTSET_START_ADDRESS as usize + i] = FONTSET[i];
         }
 
         // Initialize the CPU
         Cpu {
-            registers: [0; 16],
-            memory: [0; 4096],
+            registers: [0; constants::REGISTER_COUNT],
+            memory: [0; constants::MEMORY_SIZE],
             index: 0,
             pc: ROM_START, // Start of ROM in memory
-            stack: [0; 16],
+            stack: [0; constants::STACK_LEVELS],
             sp: 0, // stack pointer
             delay_timer: 0,
             sound_timer: 0,
-            keyboard: [0; 16],
-            display: [0; 64 * 32],
+            keyboard: [0; constants::KEY_COUNT],
+            display: [0; constants::VIDEO_WIDTH as usize * constants::VIDEO_HEIGHT as usize],
             opcode: 0,
             draw_flag: false,
         }
@@ -84,7 +106,7 @@ impl Cpu {
     /*
     * Generate a random u8 number
     */
-    fn rand_gen(&mut self) -> u8 { // TODO change this implementation
+    fn rand_gen(&mut self) -> u8 {
         let mut rng = rand::thread_rng();
         rng.gen_range(0..=255)
     }
@@ -133,7 +155,7 @@ impl Cpu {
     *   3xkk - SE Vx, byte
     *   Skip next instruction if Vx = kk.
     */
-    fn op_3xkk(&mut self) { // TODO self.registers[vx as usize] as u16 may be incorrect, as registers are u8, may need to shift left by 8 bits
+    fn op_3xkk(&mut self) {
         let vx = ((self.opcode & 0x0F00) >> 8) as usize;
         let kk = (self.opcode & 0x00FF) as u8;
         if self.registers[vx] == kk {
@@ -144,7 +166,6 @@ impl Cpu {
     /*
     *   4xkk - SNE Vx, byte
     *   Skip next instruction if Vx != kk.
-    *   TODO self.registers[vx as usize] as u16 may be incorrect, as registers are u8, may need to shift left by 8 bits
     */
     fn op_4xkk(&mut self) {
         let vx = ((self.opcode & 0x0F00) >> 8) as usize;
@@ -159,10 +180,10 @@ impl Cpu {
     *   Skip next instruction if Vx = Vy.
     */
     fn op_5xy0(&mut self) {
-        let vx = (self.opcode & 0x0F00) >> 8;
-        let vy = (self.opcode & 0x00F0) >> 4;
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        let vy = ((self.opcode & 0x00F0) >> 4) as usize;
 
-        if self.registers[vx as usize] == self.registers[vy as usize] {
+        if self.registers[vx] == self.registers[vy] {
             self.pc += 2;
         }
     }
@@ -170,13 +191,12 @@ impl Cpu {
     /*
     *   6xkk - LD Vx, byte
     *   Set Vx = kk.
-    *   TODO self.registers[vx as usize] as u16 may be incorrect, as registers are u8, may need to shift left by 8 bits
     */
     fn op_6xkk(&mut self) {
-        let vx = (self.opcode & 0x0F00) >> 8;
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
         let kk = (self.opcode & 0x00FF) as u8;
 
-        self.registers[vx as usize] = kk;
+        self.registers[vx] = kk;
     }
 
     /*
@@ -184,10 +204,10 @@ impl Cpu {
     *   Set Vx = Vx + kk.
     */
     fn op_7xkk(&mut self) {
-        let vx: u8 = ((self.opcode & 0x0F00) >> 8) as u8;
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
         let kk = (self.opcode & 0x00FF) as u8;
 
-        self.registers[vx as usize] = self.registers[vx as usize].wrapping_add(kk);
+        self.registers[vx] = self.registers[vx].wrapping_add(kk);
     }
 
     /*
@@ -195,10 +215,10 @@ impl Cpu {
     *   Set Vx = Vy.
     */
     fn op_8xy0(&mut self) {
-        let vx = (self.opcode & 0x0F00) >> 8;
-        let vy = (self.opcode & 0x00F0) >> 4;
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        let vy = ((self.opcode & 0x00F0) >> 4) as usize;
 
-        self.registers[vx as usize] = self.registers[vy as usize];
+        self.registers[vx] = self.registers[vy];
     }
 
     /*
@@ -206,11 +226,10 @@ impl Cpu {
     *   Set Vx = Vx OR Vy.
     */
     fn op_8xy1(&mut self) {
-        let vx = (self.opcode & 0x0F00) >> 8;
-        let vy = (self.opcode & 0x00F0) >> 4;
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        let vy = ((self.opcode & 0x00F0) >> 4) as usize;
 
-        self.registers[vx as usize] = self.registers[vx as usize] | self.registers[vy as usize];
-
+        self.registers[vx] = self.registers[vx] | self.registers[vy];
     }
 
     /*
@@ -218,11 +237,10 @@ impl Cpu {
     *   Set Vx = Vx AND Vy.
     */
     fn op_8xy2(&mut self) {
-        let vx = (self.opcode & 0x0F00) >> 8;
-        let vy = (self.opcode & 0x00F0) >> 4;
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        let vy = ((self.opcode & 0x00F0) >> 4) as usize;
 
-        self.registers[vx as usize] = self.registers[vx as usize] & self.registers[vy as usize];
-
+        self.registers[vx] = self.registers[vx] & self.registers[vy];
     }
 
     /*
@@ -230,11 +248,10 @@ impl Cpu {
     *   Set Vx = Vx XOR Vy.
     */
     fn op_8xy3(&mut self) {
-        let vx = (self.opcode & 0x0F00) >> 8;
-        let vy = (self.opcode & 0x00F0) >> 4;
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        let vy = ((self.opcode & 0x00F0) >> 4) as usize;
 
-        self.registers[vx as usize] = self.registers[vx as usize] ^ self.registers[vy as usize];
-
+        self.registers[vx] = self.registers[vx] ^ self.registers[vy];
     }
 
     /*
@@ -242,10 +259,10 @@ impl Cpu {
     *   Set Vx = Vx + Vy, set VF = carry.
     */
     fn op_8xy4(&mut self) {
-        let vx = (self.opcode & 0x0F00) >> 8;
-        let vy = (self.opcode & 0x00F0) >> 4;
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        let vy = ((self.opcode & 0x00F0) >> 4) as usize;
 
-        let (sum, overflow) = (self.registers[vx as usize]).overflowing_add(self.registers[vy as usize]);
+        let (sum, overflow) = (self.registers[vx]).overflowing_add(self.registers[vy]);
 
         if overflow {
             self.registers[0xF] = 1;
@@ -253,7 +270,7 @@ impl Cpu {
             self.registers[0xF] = 0;
         }
 
-        self.registers[vx as usize] = sum;
+        self.registers[vx] = sum;
     }
 
     /*
@@ -261,21 +278,20 @@ impl Cpu {
     *   Set Vx = Vx - Vy, set VF = NOT borrow.
     */
     fn op_8xy5(&mut self) {
-        let vx = (self.opcode & 0x0F00) >> 8;
-        let vy = (self.opcode & 0x00F0) >> 4;
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        let vy = ((self.opcode & 0x00F0) >> 4) as usize;
 
-        self.registers[0xF] = if self.registers[vx as usize] > self.registers[vy as usize] { 1 } else { 0 };
-        self.registers[vx as usize] = self.registers[vx as usize].wrapping_sub(self.registers[vy as usize]);
+        self.registers[0xF] = if self.registers[vx] > self.registers[vy] { 1 } else { 0 };
+        self.registers[vx] = self.registers[vx].wrapping_sub(self.registers[vy]);
     }
 
     /*
     *   8xy6 - SHR Vx (shift right Vx by 1)
     *   Set Vx = Vx SHR 1.
-    *   TODO DOUBLE CHECK THIS LOGIC
     */
     fn op_8xy6(&mut self) {
-        let vx = (self.opcode & 0x0F00) >> 8;
-        let lsb = self.registers[vx as usize] >> 0x1;
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        let lsb = self.registers[vx] >> 0x1;
 
         if lsb == 1 {
             self.registers[0xF] = 1;
@@ -283,8 +299,7 @@ impl Cpu {
             self.registers[0xF] = 0;
         }
 
-        self.registers[vx as usize] >>= 1;
-
+        self.registers[vx] >>= 1;
     }
 
     /*
@@ -292,10 +307,10 @@ impl Cpu {
     *   Set Vx = Vy - Vx, set VF = NOT borrow.
     */
     fn op_8xy7(&mut self) {
-        let vx = (self.opcode & 0x0F00) >> 8;
-        let vy = (self.opcode & 0x00F0) >> 4;
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        let vy = ((self.opcode & 0x00F0) >> 4) as usize;
 
-        let (sum, overflow) = (self.registers[vx as usize]).overflowing_add(self.registers[vy as usize]);
+        let (sum, overflow) = (self.registers[vx]).overflowing_add(self.registers[vy]);
 
         if overflow {
             self.registers[0xF] = 0;
@@ -303,7 +318,7 @@ impl Cpu {
             self.registers[0xF] = 1;
         }
 
-        self.registers[vy as usize] = sum;
+        self.registers[vy] = sum;
 
     }
 
@@ -312,10 +327,10 @@ impl Cpu {
     *   Set Vx = Vx SHL 1.
     */
     fn op_8xye(&mut self) {
-        let vx = (self.opcode & 0x0F00) >> 8;
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
 
-        self.registers[0xF] = (self.registers[vx as usize] & 0x80) >> 7; // TODO unsure if this is right way to get the MSB
-        self.registers[vx as usize] <<= 1;
+        self.registers[0xF] = (self.registers[vx] & 0x80) >> 7;
+        self.registers[vx] <<= 1;
 
     }
 
@@ -324,10 +339,10 @@ impl Cpu {
     *   Skip next instruction if Vx != Vy.
     */
     fn op_9xy0(&mut self) {
-        let vx = (self.opcode & 0x0F00) >> 8;
-        let vy = (self.opcode & 0x00F0) >> 4;
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        let vy = ((self.opcode & 0x00F0) >> 4) as usize;
 
-        if self.registers[vx as usize] != self.registers[vy as usize] {
+        if self.registers[vx] != self.registers[vy] {
             self.pc += 2;
         }
     }
@@ -353,10 +368,10 @@ impl Cpu {
     *   Set Vx = random byte AND kk.
     */
     fn op_cxkk(&mut self) {
-        let vx = (self.opcode & 0x0F00) >> 8;
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
         let kk = (self.opcode & 0x00FF) as u8;
 
-        self.registers[vx as usize] = self.rand_gen() & kk;
+        self.registers[vx] = self.rand_gen() & kk;
     }
 
     /*
@@ -400,8 +415,8 @@ impl Cpu {
     *   Skip next instruction if key with the value of Vx is pressed.
     */
     fn op_ex9e(&mut self) {
-        let vx = (self.opcode & 0x0F00) >> 8;
-        let key = self.registers[vx as usize] as usize;
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        let key = self.registers[vx] as usize;
         let key_state = self.keyboard[key];
 
         if key_state != 0 {
@@ -417,8 +432,8 @@ impl Cpu {
     *   Skip next instruction if key with the value of Vx is not pressed.
     */
     fn op_exa1(&mut self) {
-        let vx = (self.opcode & 0x0F00) >> 8;
-        let key = self.registers[vx as usize] as usize;
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        let key = self.registers[vx] as usize;
         let key_state = self.keyboard[key];
 
         if key_state == 0 {
@@ -426,7 +441,6 @@ impl Cpu {
         }
 
         self.keyboard[key] = 0;
-
     }
 
     /*
@@ -434,8 +448,8 @@ impl Cpu {
     *   Set Vx = delay timer value.
     */
     fn op_fx07(&mut self) {
-        let vx = (self.opcode & 0x0F00) >> 8;
-        self.registers[vx as usize] = self.delay_timer;
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        self.registers[vx] = self.delay_timer;
     }
 
     /*
@@ -445,10 +459,10 @@ impl Cpu {
     *   This has the effect of running the same instruction repeatedly.
     */
     fn op_fx0a(&mut self) {
-        let vx = (self.opcode & 0x0F00) >> 8;
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
 
         if let Some (index) = self.keyboard.iter().position(|&key| key != 0) {
-            self.registers[vx as usize] = index as u8;
+            self.registers[vx] = index as u8;
         } else {
             // No key press, decrement the PC to repeat the instruction to make instuction loop until key press
             self.pc -= 2;
@@ -460,8 +474,8 @@ impl Cpu {
     *   Set delay timer = Vx.
     */
     fn op_fx15(&mut self) {
-        let vx = (self.opcode & 0x0F00) >> 8;
-        self.delay_timer = self.registers[vx as usize];
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        self.delay_timer = self.registers[vx];
     }
 
     /*
@@ -469,8 +483,8 @@ impl Cpu {
     *   Set sound timer = Vx.
     */
     fn op_fx18(&mut self) {
-        let vx = (self.opcode & 0x0F00) >> 8;
-        self.sound_timer = self.registers[vx as usize];
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        self.sound_timer = self.registers[vx];
     }
 
     /*
@@ -478,8 +492,8 @@ impl Cpu {
     *   Set I = I + Vx.
     */
     fn op_fx1e(&mut self) {
-        let vx = (self.opcode & 0x0F00) >> 8;
-        self.index = self.index.wrapping_add(self.registers[vx as usize] as u16);
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        self.index = self.index.wrapping_add(self.registers[vx] as u16);
     }
 
     /*
@@ -487,8 +501,8 @@ impl Cpu {
     *   Set I = location of sprite for digit Vx.
     */
     fn op_fx29(&mut self) {
-        let vx = (self.opcode & 0x0F00) >> 8;
-        let digit = self.registers[vx as usize];
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        let digit = self.registers[vx];
 
         self.index = constants::FONTSET_START_ADDRESS.wrapping_add(5 * digit) as u16;
     }
@@ -496,16 +510,10 @@ impl Cpu {
     /*
     *   Fx33 - LD B, Vx
     *   Store BCD representation of Vx in memory locations I, I+1, and I+2.
-    *   The interpreter takes the decimal value of Vx, and places the hundreds digit in memory at location in I,
-    *   the tens digit at location I+1, and the ones digit at location I+2.
-    *
-    *   We can use the modulus operator to get the right-most digit of a number, and then do a division to remove that digit.
-    *   A division by ten will either completely remove the digit (340 / 10 = 34),
-    *   or result in a float which will be truncated (345 / 10 = 34.5 = 34).
     */
     fn op_fx33(&mut self) {
-        let vx = (self.opcode & 0x0F00) >> 8;
-        let value = self.registers[vx as usize];
+        let vx = ((self.opcode & 0x0F00) >> 8) as usize;
+        let value = self.registers[vx];
 
         self.memory[self.index as usize] = value / 100;
         self.memory[(self.index + 1) as usize] = (value / 10) % 10;
@@ -537,12 +545,6 @@ impl Cpu {
     }
 
     /*
-    *   OP_NULL
-    *   Do nothing.
-    */
-    fn op_null(&mut self) {}
-
-    /*
     *   Cycle
     *   Fetch, decode, and execute an instruction.
     */
@@ -550,6 +552,7 @@ impl Cpu {
         // Fetch
         self.opcode = (self.memory[self.pc as usize] as u16) << 8 | self.memory[(self.pc + 1) as usize] as u16;
 
+        // Increment the program counter
         self.pc += 2;
 
         // Decode and execute.
@@ -617,11 +620,11 @@ impl Cpu {
                 }
             }
             _ => {
-                self.op_null();
+                panic!("Unsupported opcode: {}", (self.opcode & 0x00FF));
             },
         }
 
-        // Decrement delay and sound timers if necessary.
+        // Decrement delay and sound timers if required.
         if self.delay_timer > 0 {
             self.delay_timer -= 1;
         }
