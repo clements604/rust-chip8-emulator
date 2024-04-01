@@ -1,4 +1,6 @@
 use std::env;
+use env_logger;
+use log::{debug, error};
 use std::time::{Duration, Instant};
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
@@ -8,6 +10,12 @@ mod constants;
 mod display;
 
 fn main() {
+    let _ = env_logger::builder()
+            .target(env_logger::Target::Stdout)
+            .filter_level(log::LevelFilter::Info)
+            .is_test(false)
+            .try_init();
+
     let args: Vec<String> = env::args().collect();
 
     if args.len() != 2 {
@@ -42,7 +50,7 @@ fn main() {
                     keycode: Some(keycode),
                     ..
                 } => {
-                    println!("{:?}", keycode);
+                   debug!("{:?}", keycode);
                     // Reset keyboard
                     for i in 0..16 {
                         cpu.keyboard[i] = 0;
@@ -67,7 +75,7 @@ fn main() {
                         _ => {}
                     }
                 },
-                _ => println!("Unhandled event"),
+                _ => error!("Unhandled event"),
             }
         }
 
@@ -76,7 +84,7 @@ fn main() {
             cpu.draw_flag = false;
         }
 
-        println!("CPU {}", cpu);
+       debug!("CPU {}", cpu);
 
         cpu.cycle();
 

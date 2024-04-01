@@ -3,7 +3,7 @@ use std::fmt;
 use std::fs::File;
 use std::io::prelude::*;
 use rand::prelude::*;
-
+use log::debug;
 use crate::constants;
 use crate::constants::*;
 
@@ -99,7 +99,7 @@ impl Cpu {
         // Load the buffer into CPU memory
         for i in 0..buffer.len() {
             self.memory[ROM_START as usize + i] = buffer[i] as u8;
-            println!("{}", self.memory[ROM_START as usize + i]);
+            debug!("{}", self.memory[ROM_START as usize + i]);
         }
     }
 
